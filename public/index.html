@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banana Game - CIS046-3 Software For Enterprise</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>🍌 Banana Puzzle Game</h1>
+      <p class="subtitle">CIS046-3 Software For Enterprise | Database: <code>bananagame2</code></p>
+    </header>
+
+    <!-- Notification Message Area -->
+    <div id="alert-box" class="alert-box hidden"></div>
+
+    <!-- AUTH SECTION (Virtual Identity) -->
+    <section id="auth-section" class="card">
+      <div class="auth-tabs">
+        <button id="tab-login" class="tab-btn active">Login</button>
+        <button id="tab-register" class="tab-btn">Register</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="auth-form">
+        <h3>Login to Play</h3>
+        <div class="form-group">
+          <label for="login-username">Username:</label>
+          <input type="text" id="login-username" placeholder="Enter username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password:</label>
+          <input type="password" id="login-password" placeholder="Enter password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+        <p class="form-note">Test account: <strong>player1</strong> / password: <strong>password123</strong></p>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" class="auth-form hidden">
+        <h3>Create New Virtual Identity</h3>
+        <div class="form-group">
+          <label for="reg-username">Username:</label>
+          <input type="text" id="reg-username" placeholder="Choose username (3-30 chars)" required minlength="3" maxlength="30" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Password:</label>
+          <input type="password" id="reg-password" placeholder="Choose password (min 4 chars)" required minlength="4" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary">Register</button>
+      </form>
+    </section>
+
+    <!-- GAME SECTION (Event-Driven & Interoperability) -->
+    <section id="game-section" class="card hidden">
+      <!-- Player Status Bar -->
+      <div class="status-bar">
+        <div>
+          <span>Player: <strong id="player-username">-</strong></span> | 
+          <span>Score: <strong id="player-score">0</strong></span> | 
+          <span>Rounds: <strong id="player-rounds">0</strong></span>
+        </div>
+        <div>
+          <button id="btn-reset" class="btn btn-small">Reset Score</button>
+          <button id="btn-logout" class="btn btn-small btn-danger">Logout</button>
+        </div>
+      </div>
+
+      <!-- Puzzle Card -->
+      <div class="puzzle-area">
+        <h3>Solve the Banana Math Equation</h3>
+        <p class="puzzle-instruction">What single digit (0 to 9) replaces the question mark <strong>?</strong></p>
+
+        <!-- Interoperability: External Banana API Image -->
+        <div class="image-wrapper">
+          <div id="image-loading" class="loading-spinner hidden">Loading puzzle from Banana API...</div>
+          <img id="puzzle-image" src="" alt="Banana Puzzle Question" class="puzzle-img">
+        </div>
+
+        <!-- Feedback Banner -->
+        <div id="feedback-box" class="feedback-box hidden"></div>
+
+        <!-- Event-Driven Answer Controls -->
+        <div id="controls-area">
+          <p class="controls-label">Select your answer:</p>
+          <div class="digit-buttons">
+            <button class="btn btn-digit" data-digit="0">0</button>
+            <button class="btn btn-digit" data-digit="1">1</button>
+            <button class="btn btn-digit" data-digit="2">2</button>
+            <button class="btn btn-digit" data-digit="3">3</button>
+            <button class="btn btn-digit" data-digit="4">4</button>
+            <button class="btn btn-digit" data-digit="5">5</button>
+            <button class="btn btn-digit" data-digit="6">6</button>
+            <button class="btn btn-digit" data-digit="7">7</button>
+            <button class="btn btn-digit" data-digit="8">8</button>
+            <button class="btn btn-digit" data-digit="9">9</button>
+          </div>
+
+          <!-- Alternative manual input -->
+          <div class="manual-input-row">
+            <input type="number" id="manual-guess" min="0" max="9" placeholder="0-9">
+            <button id="btn-submit-manual" class="btn btn-primary">Submit Answer</button>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button id="btn-next-question" class="btn btn-success hidden">Next Puzzle ➡️</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- DATA TABS (Leaderboard & History) -->
+    <section class="card secondary-card">
+      <div class="sub-tabs">
+        <button id="tab-leaderboard" class="tab-btn active">🏆 Leaderboard</button>
+        <button id="tab-history" class="tab-btn">📜 My History</button>
+        <button id="tab-themes" class="tab-btn">ℹ️ 4 Assignment Themes</button>
+      </div>
+
+      <!-- Leaderboard Panel -->
+      <div id="panel-leaderboard" class="sub-panel">
+        <table class="simple-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Player</th>
+              <th>High Score</th>
+              <th>Rounds</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body">
+            <tr><td colspan="4">Loading leaderboard...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- History Panel -->
+      <div id="panel-history" class="sub-panel hidden">
+        <p id="history-login-warning" class="info-note">Please login to view your personal round history.</p>
+        <table id="history-table" class="simple-table hidden">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Your Guess</th>
+              <th>Correct Answer</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
+
+      <!-- 4 Themes Info for Presentation -->
+      <div id="panel-themes" class="sub-panel hidden">
+        <div class="themes-list">
+          <div class="theme-item">
+            <h4>1. Version Control</h4>
+            <p>Code structured into modular MVC components (<code>config/</code>, <code>services/</code>, <code>controllers/</code>, <code>routes/</code>, <code>public/</code>) tracked with Git commits and branch isolation.</p>
+          </div>
+          <div class="theme-item">
+            <h4>2. Event-Driven Programming</h4>
+            <p>UI click and submit events on the client, non-blocking asynchronous event loop with Promise handlers, and request/response event streams on Express.</p>
+          </div>
+          <div class="theme-item">
+            <h4>3. Interoperability</h4>
+            <p>Consumes external Marc Conrad REST Banana API over HTTPS with JSON payloads; interoperates with MySQL database (<code>bananagame2</code>) via TCP SQL wire protocol.</p>
+          </div>
+          <div class="theme-item">
+            <h4>4. Virtual Identity</h4>
+            <p>Player identity modeled in MySQL <code>users</code> table, authenticated with salted bcrypt hashing and stateful HTTP-only session cookies.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>CIS046-3 Software For Enterprise &bull; Banana Game Artefact &bull; MySQL Database: <strong>bananagame2</strong></p>
+    </footer>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
