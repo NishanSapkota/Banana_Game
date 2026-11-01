@@ -22,7 +22,7 @@ const gameRoutes = require('./routes/gameRoutes');
 const { isDbConnected } = require('./config/db');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT, 10) || 3000;
 
 // Body Parsers & Cookie Parser
 app.use(express.json());
@@ -71,11 +71,26 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log('====================================================');
-  console.log(` Banana Game Server running at: http://localhost:${PORT}`);
-  console.log(` Database: ${process.env.DB_NAME || 'bananagame2'}`);
-  console.log(' Press Ctrl+C to stop the server.');
-  console.log('====================================================');
-});
+// Start Server with dynamic fallback if port is in use
+function startServer(portToTry) {
+  const server = app.listen(portToTry, () => {
+    console.log('====================================================');
+    console.log(` Banana Game Server running at: http://localhost:${portToTry}`);
+    console.log(` Database: ${process.env.DB_NAME || 'bananagame2'}`);
+    console.log(' Press Ctrl+C to stop the server.');
+    console.log('====================================================');
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      const nextPort = parseInt(portToTry, 10) + 1;
+      console.warn(`[Server Notice] Port ${portToTry} is in use, attempting port ${nextPort}...`);
+      startServer(nextPort);
+    } else {
+      console.error('[Server Error]', err);
+    }
+  });
+}
+
+startServer(PORT);
+
