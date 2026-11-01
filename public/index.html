@@ -36,7 +36,6 @@
           <input type="password" id="login-password" placeholder="Enter password" required autocomplete="current-password">
         </div>
         <button type="submit" class="btn btn-primary">Login</button>
-        <p class="form-note">Test account: <strong>player1</strong> / password: <strong>password123</strong></p>
       </form>
 
       <!-- Register Form -->
@@ -61,10 +60,11 @@
         <div>
           <span>Player: <strong id="player-username">-</strong></span> | 
           <span>Score: <strong id="player-score">0</strong></span> | 
-          <span>Rounds: <strong id="player-rounds">0</strong></span>
+          <span>Rounds: <strong id="player-rounds">0</strong></span> | 
+          <span class="balloons-section">Balloons: <strong id="balloons-display" class="balloons-display">🎈 🎈 🎈</strong></span>
         </div>
         <div>
-          <button id="btn-reset" class="btn btn-small">Reset Score</button>
+          <button id="btn-reset" class="btn btn-small">Restart Game</button>
           <button id="btn-logout" class="btn btn-small btn-danger">Logout</button>
         </div>
       </div>
@@ -82,6 +82,15 @@
 
         <!-- Feedback Banner -->
         <div id="feedback-box" class="feedback-box hidden"></div>
+
+        <!-- Game Over Box (Triggered after 3 wrong answers) -->
+        <div id="game-over-box" class="game-over-box hidden">
+          <div class="game-over-icon">💥</div>
+          <h3>GAME OVER</h3>
+          <p>You popped all 3 balloons with 3 wrong answers!</p>
+          <p class="final-score-info">Final Score: <strong id="game-over-score">0</strong> points in <strong id="game-over-rounds">0</strong> rounds</p>
+          <button id="btn-play-again" class="btn btn-primary btn-large">Play Again 🎈</button>
+        </div>
 
         <!-- Event-Driven Answer Controls -->
         <div id="controls-area">

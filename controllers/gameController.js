@@ -32,17 +32,32 @@ async function getNewQuestion(req, res) {
       startedAt: Date.now()
     };
 
-    // Initialize in-memory score for the session if not set
+    // Initialize in-memory game state if not set
     if (req.session.gameScore === undefined) {
       req.session.gameScore = 0;
       req.session.roundsPlayed = 0;
+      req.session.balloons = 3;
+      req.session.gameOver = false;
     }
 
-    // Return only the question URL to the client
+    // If already game over, indicate to client
+    if (req.session.gameOver || req.session.balloons <= 0) {
+      return res.json({
+        gameOver: true,
+        balloons: 0,
+        score: req.session.gameScore,
+        roundsPlayed: req.session.roundsPlayed,
+        message: 'Game Over! You popped all 3 balloons. Click Restart to play again.'
+      });
+    }
+
+    // Return only the question URL and current state to the client
     return res.json({
       question: puzzle.question,
       score: req.session.gameScore,
-      roundsPlayed: req.session.roundsPlayed
+      roundsPlayed: req.session.roundsPlayed,
+      balloons: req.session.balloons,
+      gameOver: false
     });
   } catch (error) {
     console.error('[Game Controller] Error fetching question:', error);
@@ -72,6 +87,21 @@ async function submitGuess(req, res) {
       return res.status(400).json({ error: 'Invalid answer. Must be a single digit between 0 and 9.' });
     }
 
+    // Initialize balloons if undefined
+    if (req.session.balloons === undefined) {
+      req.session.balloons = 3;
+      req.session.gameOver = false;
+    }
+
+    // Check if game is already over
+    if (req.session.gameOver || req.session.balloons <= 0) {
+      return res.status(400).json({
+        error: 'Game over! All 3 balloons have burst. Please restart the game.',
+        gameOver: true,
+        balloons: 0
+      });
+    }
+
     const { question, solution } = req.session.currentQuestion;
     const isCorrect = (parsedGuess === solution);
 
@@ -79,13 +109,31 @@ async function submitGuess(req, res) {
     req.session.roundsPlayed = (req.session.roundsPlayed || 0) + 1;
     if (isCorrect) {
       req.session.gameScore = (req.session.gameScore || 0) + 10;
+    } else {
+      // Wrong answer pops 1 balloon
+      req.session.balloons = Math.max(0, req.session.balloons - 1);
+      if (req.session.balloons === 0) {
+        req.session.gameOver = true;
+      }
     }
 
     const currentScore = req.session.gameScore;
     const roundsPlayed = req.session.roundsPlayed;
+    const balloonsLeft = req.session.balloons;
+    const isGameOver = req.session.balloons <= 0;
 
     // Reset current question so same question cannot be submitted twice
     req.session.currentQuestion = null;
+
+    // Prepare status message
+    let resultMessage = '';
+    if (isCorrect) {
+      resultMessage = '🍌 Correct! Well done! (+10 pts)';
+    } else if (isGameOver) {
+      resultMessage = `💥 Wrong answer! You burst your 3rd balloon! Game Over! The correct answer was ${solution}.`;
+    } else {
+      resultMessage = `💥 Wrong answer! 1 balloon burst! (${balloonsLeft} balloon${balloonsLeft === 1 ? '' : 's'} remaining). The correct answer was ${solution}.`;
+    }
 
     // Persist event to MySQL if database is active (Virtual Identity & Interoperability)
     if (isDbConnected()) {
@@ -116,7 +164,9 @@ async function submitGuess(req, res) {
       userAnswer: parsedGuess,
       newScore: currentScore,
       roundsPlayed: roundsPlayed,
-      message: isCorrect ? 'Correct! Well done! (+10 pts)' : `Incorrect! The correct answer was ${solution}.`
+      balloons: balloonsLeft,
+      gameOver: isGameOver,
+      message: resultMessage
     });
   } catch (error) {
     console.error('[Game Controller] Error handling guess event:', error);
@@ -193,15 +243,23 @@ async function getUserHistory(req, res) {
 }
 
 /**
- * Reset current game score
+ * Reset / Restart game with 3 fresh balloons
  */
 function resetScore(req, res) {
   if (req.session) {
     req.session.gameScore = 0;
     req.session.roundsPlayed = 0;
+    req.session.balloons = 3;
+    req.session.gameOver = false;
     req.session.currentQuestion = null;
   }
-  return res.json({ message: 'Score reset successfully.', score: 0, roundsPlayed: 0 });
+  return res.json({
+    message: 'Game restarted with 3 balloons!',
+    score: 0,
+    roundsPlayed: 0,
+    balloons: 3,
+    gameOver: false
+  });
 }
 
 module.exports = {

@@ -12,6 +12,7 @@
 let currentUser = null;
 let currentScore = 0;
 let currentRounds = 0;
+let currentBalloons = 3;
 
 // DOM Elements - Alerts & Forms
 const alertBox = document.getElementById('alert-box');
@@ -27,12 +28,18 @@ const registerForm = document.getElementById('register-form');
 const playerUsernameEl = document.getElementById('player-username');
 const playerScoreEl = document.getElementById('player-score');
 const playerRoundsEl = document.getElementById('player-rounds');
+const balloonsDisplay = document.getElementById('balloons-display');
 const btnLogout = document.getElementById('btn-logout');
 const btnReset = document.getElementById('btn-reset');
 
 const puzzleImage = document.getElementById('puzzle-image');
 const imageLoading = document.getElementById('image-loading');
 const feedbackBox = document.getElementById('feedback-box');
+const gameOverBox = document.getElementById('game-over-box');
+const gameOverScore = document.getElementById('game-over-score');
+const gameOverRounds = document.getElementById('game-over-rounds');
+const btnPlayAgain = document.getElementById('btn-play-again');
+
 const controlsArea = document.getElementById('controls-area');
 const digitButtons = document.querySelectorAll('.btn-digit');
 const manualGuessInput = document.getElementById('manual-guess');
@@ -77,6 +84,7 @@ function setupEventListeners() {
   // Player Logout & Reset Events
   btnLogout.addEventListener('click', handleLogoutEvent);
   btnReset.addEventListener('click', handleResetEvent);
+  btnPlayAgain.addEventListener('click', handleResetEvent);
 
   // Digit Button Click Events (0 through 9)
   digitButtons.forEach((btn) => {
@@ -160,6 +168,31 @@ function switchSubTab(tab) {
     tabThemes.classList.add('active');
     panelThemes.classList.remove('hidden');
   }
+}
+
+function renderBalloons(count) {
+  currentBalloons = (count !== undefined) ? count : 3;
+  let balloonsHtml = '';
+  for (let i = 0; i < 3; i++) {
+    if (i < currentBalloons) {
+      balloonsHtml += '🎈 ';
+    } else {
+      balloonsHtml += '💥 ';
+    }
+  }
+  balloonsDisplay.textContent = balloonsHtml.trim();
+}
+
+function triggerGameOver(score, rounds) {
+  controlsArea.classList.add('hidden');
+  btnNextQuestion.classList.add('hidden');
+  puzzleImage.style.display = 'none';
+  imageLoading.classList.add('hidden');
+  renderBalloons(0);
+
+  gameOverScore.textContent = score;
+  gameOverRounds.textContent = rounds;
+  gameOverBox.classList.remove('hidden');
 }
 
 function updateGameStateUI(username, score, rounds) {
@@ -284,6 +317,7 @@ function showGameView() {
 async function loadNewQuestion() {
   feedbackBox.classList.add('hidden');
   btnNextQuestion.classList.add('hidden');
+  gameOverBox.classList.add('hidden');
   controlsArea.classList.remove('hidden');
   manualGuessInput.value = '';
 
@@ -300,6 +334,11 @@ async function loadNewQuestion() {
       return;
     }
 
+    if (data.gameOver) {
+      triggerGameOver(data.score, data.roundsPlayed);
+      return;
+    }
+
     // Set Image src from external Banana API (Interoperability)
     puzzleImage.onload = () => {
       imageLoading.classList.add('hidden');
@@ -312,6 +351,7 @@ async function loadNewQuestion() {
     puzzleImage.src = data.question;
     currentScore = data.score;
     currentRounds = data.roundsPlayed;
+    renderBalloons(data.balloons);
     updateGameStateUI(currentUser.username, currentScore, currentRounds);
   } catch (err) {
     imageLoading.textContent = 'Connection error loading puzzle.';
@@ -343,15 +383,24 @@ async function submitAnswerEvent(digit) {
     currentScore = data.newScore;
     currentRounds = data.roundsPlayed;
     updateGameStateUI(currentUser.username, currentScore, currentRounds);
+    renderBalloons(data.balloons);
 
     // Display feedback
     feedbackBox.textContent = data.message;
     feedbackBox.className = `feedback-box ${data.isCorrect ? 'feedback-correct' : 'feedback-incorrect'}`;
     feedbackBox.classList.remove('hidden');
 
-    // Hide input controls and show "Next Puzzle" button
+    // Hide input controls
     controlsArea.classList.add('hidden');
-    btnNextQuestion.classList.remove('hidden');
+
+    if (data.gameOver) {
+      // 3 wrong answers - Game Over event!
+      btnNextQuestion.classList.add('hidden');
+      triggerGameOver(currentScore, currentRounds);
+    } else {
+      // Show "Next Puzzle" button
+      btnNextQuestion.classList.remove('hidden');
+    }
 
     // Refresh leaderboard in background
     loadLeaderboard();
@@ -364,18 +413,18 @@ async function submitAnswerEvent(digit) {
 }
 
 async function handleResetEvent() {
-  if (!confirm('Are you sure you want to reset your current score to 0?')) return;
-
   try {
     const res = await fetch('/api/game/reset', { method: 'POST' });
     const data = await res.json();
     currentScore = data.score;
     currentRounds = data.roundsPlayed;
+    renderBalloons(data.balloons || 3);
+    gameOverBox.classList.add('hidden');
     updateGameStateUI(currentUser.username, currentScore, currentRounds);
-    showAlert('Score has been reset.', 'info');
+    showAlert('Game restarted with 3 balloons!', 'info');
     loadNewQuestion();
   } catch (err) {
-    showAlert('Error resetting score.', 'error');
+    showAlert('Error restarting game.', 'error');
   }
 }
 

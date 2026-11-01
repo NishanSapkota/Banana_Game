@@ -102,6 +102,12 @@ ON DUPLICATE KEY UPDATE `username`=`username`;
    - **Password**: `password123`
    *(Or register any new account on the Register tab!)*
 
+5. **Balloon Lives & Game Over Rule**:
+   - Every player starts with **3 Balloons (`🎈 🎈 🎈`)**.
+   - For every **wrong answer**, 1 balloon bursts (`💥`).
+   - After **3 wrong answers**, all balloons are burst and **GAME OVER** is triggered.
+   - The final score is recorded in the MySQL database, and players can click **Play Again 🎈** to start a new round with 3 fresh balloons!
+
 ---
 
 ## 📁 Project Architecture & Components
